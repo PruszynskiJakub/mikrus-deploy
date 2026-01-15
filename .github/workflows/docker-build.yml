@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
@@ -18,11 +17,15 @@ jobs:
       packages: write
 
     outputs:
-      image_tag: ${{ steps.meta.outputs.tags }}
+      image_name: ${{ steps.lowercase.outputs.image_name }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Lowercase image name
+        id: lowercase
+        run: echo "image_name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -39,7 +42,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.lowercase.outputs.image_name }}
           tags: |
             type=sha,prefix=
             type=raw,value=latest
@@ -68,11 +71,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            docker pull ${{ env.REGISTRY }}/${{ needs.build.outputs.image_name }}:latest
             docker stop mikrus-depploy || true
             docker rm mikrus-depploy || true
             docker run -d \
               --name mikrus-depploy \
               --restart unless-stopped \
               -p 3000:3000 \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+              ${{ env.REGISTRY }}/${{ needs.build.outputs.image_name }}:latest
