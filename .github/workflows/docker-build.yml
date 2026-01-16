@@ -65,11 +65,14 @@ jobs:
     steps:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          SAMPLE_SECRET: ${{ secrets.SAMPLE_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SAMPLE_SECRET
           script: |
             docker pull ${{ env.REGISTRY }}/${{ needs.build.outputs.image_name }}:latest
             docker stop mikrus-depploy || true
@@ -78,4 +81,5 @@ jobs:
               --name mikrus-depploy \
               --restart unless-stopped \
               -p 3000:3000 \
+              -e SAMPLE_SECRET="$SAMPLE_SECRET" \
               ${{ env.REGISTRY }}/${{ needs.build.outputs.image_name }}:latest
