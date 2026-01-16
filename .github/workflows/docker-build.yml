@@ -80,6 +80,6 @@ jobs:
             docker run -d \
               --name mikrus-depploy \
               --restart unless-stopped \
-              -p 3000:3000 \
+              -p 30318:3000 \
               -e SAMPLE_SECRET="$SAMPLE_SECRET" \
               ${{ env.REGISTRY }}/${{ needs.build.outputs.image_name }}:latest
